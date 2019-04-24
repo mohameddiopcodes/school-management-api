@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  api:
+    restart: always
+    build: .
+    ports:
+      - '8000:8000'
+    links:
+      - mongo
+    volumes:
+      - '.:/usr/src/api'
+  mongo:
+    image: mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - '/data/db'
+      
