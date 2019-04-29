@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
+const axios = require('axios')
 const EducatorModel = require('../../models/classes/educator')
 const ClassModel = require('../../models/classes/class')
 
@@ -124,7 +125,7 @@ router.get('/:educatorId', (req, res, next) => {
                         message: 'Id doesn\'t match any entry in database'
                     })
                 }
-                
+
             })
         .catch(err => {
             console.log(err)
@@ -165,12 +166,8 @@ router.delete('/:educatorId', (req, res, next) => {
                     .exec()
                     .then(doc => {
                         if(doc.educators.length == 1 ) {
-                            ClassModel.deleteOne({_id: instance})
-                                .exec()
-                                .then(result => {
-                                    console.log("Deleting Educator's Class.....")
-                                })
-                                .catch(err => console.log(err))
+                            axios.delete(`http://localhost:8000/classes/${instance}`)
+                              .then(result => console.log("deleting class...."))
                         } else {
                             console.log("Didn't delete educator's classes because they depend on other educators")
                             res.status(500).json({message: "Class depends on other educators"})

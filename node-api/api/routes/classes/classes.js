@@ -5,6 +5,8 @@ const ClassModel = require('../../models/classes/class')
 const SchoolModel = require('../../models/classes/school')
 const EducatorModel = require('../../models/classes/educator')
 const SubjectModel = require('../../models/classes/subject')
+const SessionModel = require('../../models/classes/session')
+
 
 //schools
 router.get('/', (req, res, next) => {
@@ -78,7 +80,7 @@ router.get('/:classId', (req, res, next) => {
                         message: 'Id doesn\'t match any entry in database'
                     })
                 }
-                
+
             })
         .catch(err => {
             console.log(err)
@@ -115,7 +117,7 @@ router.post('/for_school/:schoolId', (req, res, next) => {
                         .save()
                         .then()
                         .catch(err => console.log(err))
-    
+
                     res.status(202).json({
                         message: `You just created a class!`,
                         createdClass: {
@@ -172,7 +174,7 @@ router.post('/for_educator/:educatorId', (req, res, next) => {
                         .save()
                         .then()
                         .catch(err => console.log(err))
-    
+
                     res.status(202).json({
                         message: `You just created a class!`,
                         createdClass: {
@@ -234,16 +236,21 @@ router.delete('/:classId', (req, res, next) => {
                 })
             }
 
-            //deleting classe's subjects
+            //deleting classe's subjects and sessions
             doc.subjects.forEach(instance => {
                 SubjectModel.findById(instance)
                     .exec()
                     .then(subject => {
                         if(subject.classes.length == 1 ) {
+                            SessionModel.deleteMany({subject: subject._id})
+                              .exec()
+                              .then(result => {
+                                console.log("Deleting session......")
+                              })
                             SubjectModel.deleteOne({_id: instance})
                                 .exec()
                                 .then(result => {
-                                    console.log("Deleting Classe's Subject.....")
+                                    console.log("Deleting subject.....")
                                 })
                                 .catch(err => console.log(err))
                         } else {

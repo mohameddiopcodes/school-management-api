@@ -4,6 +4,7 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const SchoolModel = require('../../models/classes/school')
 const ClassModel = require('../../models/classes/class')
+const axios = require('axios')
 
 //Etablissements
 //GET SCHOOLS
@@ -126,7 +127,7 @@ router.get('/:schoolId', (req, res, next) => {
                         message: 'Id doesn\'t match any entry in database'
                     })
                 }
-                
+
             })
         .catch(err => {
             console.log(err)
@@ -167,15 +168,12 @@ router.delete('/:schoolId', (req, res, next) => {
                 message: 'School not found'
             })
         }
+        //deleting classes, subjects and sessions
+        doc.classes.forEach(dependent => {
+          axios.delete(`http://localhost:8000/classes/${dependent}`)
+            .then(result => console.log(`just deleted ${dependent}`))
+        })
     })
-
-    //deletes all classes
-    ClassModel.deleteMany({school: id})
-        .exec()
-        .then(result => console.log('\ndeleting classes....\n'))
-        .catch(err => console.log(err))
-
-    //deletes school
     SchoolModel.deleteOne({_id: id})
         .exec()
         .then(result => {
