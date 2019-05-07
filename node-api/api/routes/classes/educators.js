@@ -168,6 +168,7 @@ router.delete('/:educatorId', (req, res, next) => {
                         if(doc.educators.length == 1 ) {
                             axios.delete(`http://localhost:8000/classes/${instance}`)
                               .then(result => console.log("deleting class...."))
+                              .catch(err => console.Log(err))
                         } else {
                             console.log("Didn't delete educator's classes because they depend on other educators")
                             res.status(500).json({message: "Class depends on other educators"})

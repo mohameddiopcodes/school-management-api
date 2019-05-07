@@ -172,6 +172,7 @@ router.delete('/:schoolId', (req, res, next) => {
         doc.classes.forEach(dependent => {
           axios.delete(`http://localhost:8000/classes/${dependent}`)
             .then(result => console.log(`just deleted ${dependent}`))
+            .catch(err => console.log(err))
         })
     })
     SchoolModel.deleteOne({_id: id})
