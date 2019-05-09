@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
 const ParentModel = require('../../models/classes/parent')
+const bcrypt = require('bcryptjs')
 //const StudentModel = require('../../models/classes/student')
 
 //Parents
@@ -42,57 +43,66 @@ router.get('/', (req, res, next) => {
 })
 
 router.post('/', (req, res, next) => {
-    // const studentId = req.params.studentId
-    const Parent = new ParentModel({
-        _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
-        name: req.body.name,
-        nationality: req.body.nationality,
-        sexe: req.body.sexe,
-        phoneNumber: req.body.phoneNumber,
-        email: req.body.email,
-        password: req.body.password,
-        address: req.body.address,
-        country: req.body.country,
-        photoUrl: req.body.photoUrl,
+  ParentModel.findOne({email: req.body.email})
+   .exec()
+   .then(result => {
+     if(result) {
+       return res.status(500).json({
+         message: 'email already exists'
+       })
+     }
+     bcrypt.hash(req.body.password, 10, (err, hashed) => {
+       if (err){
+         return res.status(500).json({
+           error: err
+         })
+       } else {
+         //saving parent
+          const Parent = new ParentModel({
+              _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
+              name: req.body.name,
+              nationality: req.body.nationality,
+              sexe: req.body.sexe,
+              phoneNumber: req.body.phoneNumber,
+              email: req.body.email,
+              password: hashed,
+              address: req.body.address,
+              country: req.body.country,
+              photoUrl: req.body.photoUrl,
+          })
+          Parent.save()
+              .then(result => {
+                  console.log(result)
+                  res.status(200).json({
+                      message: `You just created a parent account!`,
+                      createdParent: {
+                          _id: result._id,
+                          students: result.students,
+                          name: result.name,
+                          nationality: result.nationality,
+                          sexe: result.sexe,
+                          phoneNumber: result.phoneNumber,
+                          email: result.email,
+                          password: result.password,
+                          address: result.address,
+                          country: result.country,
+                          photoUrl: result.photoUrl,
+                          request: {
+                              type: 'GET',
+                              url: 'http://localhost:8000/parents/' + result._id
+                          }
+                      }
+                  })
+              })
+              .catch(err => {
+                  console.log(err)
+                  res.status(500).json({
+                      error: err
+                  })
+              })
+        }
+      })
     })
-    //pushing both parent in student object and student in parent object
-    // Parent.students.push(studentId)
-    // StudentModel.findById(studentId)
-    //     .exec()
-    //     .then(doc => {
-    //         doc.parents.push(Parent._id)
-    //     })
-    //saving parents and responding to request
-    Parent.save()
-        .then(result => {
-            console.log(result)
-            res.status(200).json({
-                message: `You just created a parent account!`,
-                createdParent: {
-                    _id: result._id,
-                    students: result.students,
-                    name: result.name,
-                    nationality: result.nationality,
-                    sexe: result.sexe,
-                    phoneNumber: result.phoneNumber,
-                    email: result.email,
-                    password: result.password,
-                    address: result.address,
-                    country: result.country,
-                    photoUrl: result.photoUrl,
-                    request: {
-                        type: 'GET',
-                        url: 'http://localhost:8000/parents/' + result._id
-                    }
-                }
-            })
-        })
-        .catch(err => {
-            console.log(err)
-            res.status(500).json({
-                error: err
-            })
-        })
 })
 
 
@@ -128,7 +138,7 @@ router.get('/:parentId', (req, res, next) => {
                         message: 'Id doesn\'t match any entry in database'
                     })
                 }
-                
+
             })
         .catch(err => {
             console.log(err)

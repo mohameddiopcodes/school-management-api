@@ -1,9 +1,10 @@
 const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
-const axios = require('axios')
 const EducatorModel = require('../../models/classes/educator')
 const ClassModel = require('../../models/classes/class')
+const axios = require('axios')
+const bcrypt = require('bcryptjs')
 
 //tutors
 router.get('/', (req, res, next) => {
@@ -44,51 +45,70 @@ router.get('/', (req, res, next) => {
 })
 
 router.post('/', (req, res, next) => {
-    const Educator = new EducatorModel({
-        _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
-        classes: req.body.classes,
-        name: req.body.name,
-        education: req.body.education,
-        nationality: req.body.nationality,
-        phoneNumber: req.body.phoneNumber,
-        email: req.body.email,
-        password: req.body.password,
-        address: req.body.address,
-        country: req.body.country,
-        photoUrl: req.body.photoUrl,
-        bio: req.body.bio,
+  EducatorModel.findOne({email: req.body.email})
+   .exec()
+   .then(result => {
+     if(result) {
+       return res.status(500).json({
+         message: 'email already exists'
+       })
+     }
+     bcrypt.hash(req.body.password, 10, (err, hashed) => {
+       if (err){
+         return res.status(500).json({
+           error: err
+         })
+       } else {
+         //saving educator
+          const Educator = new EducatorModel({
+              _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
+              classes: req.body.classes,
+              name: req.body.name,
+              education: req.body.education,
+              nationality: req.body.nationality,
+              phoneNumber: req.body.phoneNumber,
+              email: req.body.email,
+              password: hashed,
+              address: req.body.address,
+              country: req.body.country,
+              photoUrl: req.body.photoUrl,
+              bio: req.body.bio,
+          })
+          Educator.save()
+              .then(result => {
+                  console.log(result)
+                  res.status(201).json({
+                      message: `You just created an educator account!`,
+                      createdEducator: {
+                          _id: result._id,
+                          classes: result.classes,
+                          name: result.name,
+                          education: result.education,
+                          nationality: result.nationality,
+                          phoneNumber: result.phoneNumber,
+                          email: result.email,
+                          password: result.password,
+                          address: result.address,
+                          country: result.country,
+                          photoUrl: result.photoUrl,
+                          bio: result.bio,
+                          request: {
+                              type: 'GET',
+                              url: 'http://localhost:8000/educators/' + result._id
+                          }
+                      }
+                  })
+              })
+              .catch(err => {
+                  console.log(err)
+                  res.status(500).json({
+                      error: err
+                  })
+              })
+        }
+      })
     })
-    Educator.save()
-        .then(result => {
-            console.log(result)
-            res.status(201).json({
-                message: `You just created an educator account!`,
-                createdEducator: {
-                    _id: result._id,
-                    classes: result.classes,
-                    name: result.name,
-                    education: result.education,
-                    nationality: result.nationality,
-                    phoneNumber: result.phoneNumber,
-                    email: result.email,
-                    password: result.password,
-                    address: result.address,
-                    country: result.country,
-                    photoUrl: result.photoUrl,
-                    bio: result.bio,
-                    request: {
-                        type: 'GET',
-                        url: 'http://localhost:8000/educators/' + result._id
-                    }
-                }
-            })
-        })
-        .catch(err => {
-            console.log(err)
-            res.status(500).json({
-                error: err
-            })
-        })
+    .catch(err => console.log(err))
 })
 
 

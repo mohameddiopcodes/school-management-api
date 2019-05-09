@@ -5,12 +5,13 @@ const mongoose = require('mongoose')
 const SchoolModel = require('../../models/classes/school')
 const ClassModel = require('../../models/classes/class')
 const axios = require('axios')
+const bcrypt = require('bcryptjs')
 
 //Etablissements
 //GET SCHOOLS
 router.get('/', (req, res, next) => {
     SchoolModel.find()
-        .select('_id classes name type phoneNumber email isPublic address country photoUrl since bio')
+        .select('_id classes name type phoneNumber email password isPublic address country photoUrl since bio')
         .populate('classes', 'name')
         .exec()
         .then(docs => {
@@ -24,6 +25,7 @@ router.get('/', (req, res, next) => {
                         type: doc.type,
                         phoneNumber: doc.phoneNumber,
                         email: doc.email,
+                        password: doc.password,
                         isPublic: doc.isPublic,
                         address: doc.address,
                         country: doc.country,
@@ -47,50 +49,70 @@ router.get('/', (req, res, next) => {
 
 //POST SCHOOLS
 router.post('/', (req, res, next) => {
-    const School = new SchoolModel({
-        _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
-        classes: req.body.classes,
-        name: req.body.name,
-        type: req.body.type,
-        phoneNumber: req.body.phoneNumber,
-        email: req.body.email,
-        isPublic: req.body.isPublic,
-        address: req.body.address,
-        country: req.body.country,
-        photoUrl: req.body.photoUrl,
-        since: req.body.since,
-        bio: req.body.bio,
+   SchoolModel.findOne({email: req.body.email})
+    .exec()
+    .then(result => {
+      if(result) {
+        return res.status(500).json({
+          message: 'email already exists'
+        })
+      }
+      bcrypt.hash(req.body.password, 10, (err, hashed) => {
+        if (err){
+          return res.status(500).json({
+            error: err
+          })
+        } else {
+          //saving school
+          const School = new SchoolModel({
+              _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
+              classes: req.body.classes,
+              name: req.body.name,
+              type: req.body.type,
+              phoneNumber: req.body.phoneNumber,
+              email: req.body.email,
+              password: hashed,
+              isPublic: req.body.isPublic,
+              address: req.body.address,
+              country: req.body.country,
+              photoUrl: req.body.photoUrl,
+              since: req.body.since,
+              bio: req.body.bio,
+          })
+          School.save()
+              .then(result => {
+                  console.log(result)
+                  res.status(201).json({
+                      message: `You just created a school!`,
+                      createdSchool: {
+                          _id: result._id,
+                          name: result.name,
+                          type: result.type,
+                          phoneNumber: result.phoneNumber,
+                          email: result.email,
+                          password: result.password,
+                          isPublic: result.isPublic,
+                          address: result.address,
+                          country: result.country,
+                          photoUrl: result.photoUrl,
+                          since: result.since,
+                          bio: result.bio,
+                          request: {
+                              type: 'GET',
+                              url: 'http://localhost:8000/schools/' + result._id
+                          }
+                      }
+                  })
+              })
+              .catch(err => {
+                  console.log(err)
+                  res.status(500).json({
+                      error: err
+                  })
+              })
+          }
+       })
     })
-    School.save()
-        .then(result => {
-            console.log(result)
-            res.status(201).json({
-                message: `You just created a school!`,
-                createdSchool: {
-                    _id: result._id,
-                    name: result.name,
-                    type: result.type,
-                    phoneNumber: result.phoneNumber,
-                    email: result.email,
-                    isPublic: result.isPublic,
-                    address: result.address,
-                    country: result.country,
-                    photoUrl: result.photoUrl,
-                    since: result.since,
-                    bio: result.bio,
-                    request: {
-                        type: 'GET',
-                        url: 'http://localhost:8000/schools/' + result._id
-                    }
-                }
-            })
-        })
-        .catch(err => {
-            console.log(err)
-            res.status(500).json({
-                error: err
-            })
-        })
 })
 
 
@@ -99,7 +121,7 @@ router.post('/', (req, res, next) => {
 router.get('/:schoolId', (req, res, next) => {
     const id = req.params.schoolId
     SchoolModel.findById(id)
-        .select('_id classes name type phoneNumber email isPublic address country photoUrl since bio')
+        .select('_id classes name type phoneNumber email password isPublic address country photoUrl since bio')
         .populate('classes', 'name')
         .exec()
         .then(doc => {
@@ -111,6 +133,7 @@ router.get('/:schoolId', (req, res, next) => {
                         type: doc.type,
                         phoneNumber: doc.phoneNumber,
                         email: doc.email,
+                        password: doc.password,
                         isPublic: doc.isPublic,
                         address: doc.address,
                         country: doc.country,
@@ -138,6 +161,7 @@ router.get('/:schoolId', (req, res, next) => {
 //PATCH SCHOOL
 router.patch('/:schoolId', (req, res, next) => {
     const id = req.params.schoolId
+    //a revoir
     SchoolModel.update({_id: id}, {$set: req.body})
         .exec()
         .then(result => {
@@ -189,6 +213,7 @@ router.delete('/:schoolId', (req, res, next) => {
                         type: 'String',
                         phoneNumber: 'String',
                         email: 'String',
+                        password: 'String',
                         isPublic: 'Boolean',
                         address: 'String',
                         country: 'String',

@@ -3,6 +3,7 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const StudentModel = require('../../models/classes/student')
 const ClassModel = require('../../models/classes/class')
+const bcrypt = require('bcryptjs')
 
 //student
 router.get('/', (req, res, next) => {
@@ -48,57 +49,75 @@ router.get('/', (req, res, next) => {
 })
 
 router.post('/', (req, res, next) => {
-    const Student = new StudentModel({
-        _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
-        classes: req.body.classes,
-        name: req.body.name,
-        nationality: req.body.nationality,
-        sexe: req.body.sexe,
-        phoneNumber: req.body.phoneNumber,
-        email: req.body.email,
-        password: req.body.password,
-        birthDate: req.body.birthDate,
-        address: req.body.address,
-        country: req.body.country,
-        photoUrl: req.body.photoUrl,
-        bio: req.body.bio,
-        diseases: req.body.diseases,
-        interests: req.body.interests,
-    })
-    Student.save()
-        .then(result => {
-            console.log(result)
-            res.status(201).json({
-                message: `You just created a student account!`,
-                createdStudent: {
-                    _id: result._id,
-                    classes: result.classes,
-                    name: result.name,
-                    nationality: result.nationality,
-                    sexe: result.sexe,
-                    phoneNumber: result.phoneNumber,
-                    email: result.email,
-                    password: result.password,
-                    birthDate: result.birthDate,
-                    address: result.address,
-                    country: result.country,
-                    photoUrl: result.photoUrl,
-                    bio: result.bio,
-                    diseases: result.diseases,
-                    interests: result.interests,
-                    request: {
-                        type: 'GET',
-                        url: 'http://localhost:8000/students/' + result._id
-                    }
-                }
-            })
-        })
-        .catch(err => {
-            console.log(err)
-            res.status(500).json({
-                error: err
-            })
-        })
+  StudentModel.findOne({email: req.body.email})
+   .exec()
+   .then(result => {
+     if(result) {
+       return res.status(500).json({
+         message: 'email already exists'
+       })
+     }
+     bcrypt.hash(req.body.password, 10, (err, hashed) => {
+       if (err){
+         return res.status(500).json({
+           error: err
+         })
+       } else {
+         //saving student
+         const Student = new StudentModel({
+             _id: mongoose.Types.ObjectId(mongoose.Types.ObjectId.index),
+             classes: req.body.classes,
+             name: req.body.name,
+             nationality: req.body.nationality,
+             sexe: req.body.sexe,
+             phoneNumber: req.body.phoneNumber,
+             email: req.body.email,
+             password: hashed,
+             birthDate: req.body.birthDate,
+             address: req.body.address,
+             country: req.body.country,
+             photoUrl: req.body.photoUrl,
+             bio: req.body.bio,
+             diseases: req.body.diseases,
+             interests: req.body.interests,
+         })
+         Student.save()
+             .then(result => {
+                 console.log(result)
+                 res.status(201).json({
+                     message: `You just created a student account!`,
+                     createdStudent: {
+                         _id: result._id,
+                         classes: result.classes,
+                         name: result.name,
+                         nationality: result.nationality,
+                         sexe: result.sexe,
+                         phoneNumber: result.phoneNumber,
+                         email: result.email,
+                         password: result.password,
+                         birthDate: result.birthDate,
+                         address: result.address,
+                         country: result.country,
+                         photoUrl: result.photoUrl,
+                         bio: result.bio,
+                         diseases: result.diseases,
+                         interests: result.interests,
+                         request: {
+                             type: 'GET',
+                             url: 'http://localhost:8000/students/' + result._id
+                         }
+                     }
+                 })
+             })
+             .catch(err => {
+                 console.log(err)
+                 res.status(500).json({
+                     error: err
+                 })
+             })
+         }
+       })
+   })
 })
 
 
@@ -139,7 +158,7 @@ router.get('/:studentId', (req, res, next) => {
                         message: 'Id doesn\'t match any entry in database'
                     })
                 }
-                
+
             })
         .catch(err => {
             console.log(err)
