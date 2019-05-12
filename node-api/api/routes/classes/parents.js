@@ -3,6 +3,7 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const ParentModel = require('../../models/classes/parent')
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 //const StudentModel = require('../../models/classes/student')
 
 //Parents
@@ -42,7 +43,8 @@ router.get('/', (req, res, next) => {
     })
 })
 
-router.post('/', (req, res, next) => {
+//signup
+router.post('/signup', (req, res, next) => {
   ParentModel.findOne({email: req.body.email})
    .exec()
    .then(result => {
@@ -101,6 +103,42 @@ router.post('/', (req, res, next) => {
                   })
               })
         }
+      })
+    })
+})
+
+//login
+router.post('/login', (req, res, next) => {
+  ParentModel.findOne({email: req.body.email})
+    .exec()
+    .then(result => {
+      if(!result) {
+        return res.status(401).json({
+          message: "Auth failed"
+        })
+      }
+      bcrypt.compare(req.body.password, result.password, (err, response) => {
+        if(err) {
+          return res.status(401).json({
+            message: "Auth failed"
+          })
+        }
+        if(response) {
+          const token = jwt.sign({email: result.email, id: result.id}, process.env.JWT_KEY, {expiresIn: "1h"})
+          return res.status(200).json({
+            message: "Auth successfull",
+            token: token
+          })
+        }
+        return res.status(401).json({
+          message: "Auth failed"
+        })
+      })
+    })
+    .catch(err => {
+      console.log(err)
+      res.status(500).json({
+        error: err
       })
     })
 })

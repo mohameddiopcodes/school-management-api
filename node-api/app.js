@@ -34,13 +34,13 @@ app.use(morgan('dev'))
 
 //Middlewares listening to requests and forwarding them to routes
 //models
-app.use('/schools', schoolsRoutes)
-app.use('/educators', educatorsRoutes)
-app.use('/students', studentsRoutes)
+app.use('/schools/', schoolsRoutes)
+app.use('/educators/', educatorsRoutes)
+app.use('/students/', studentsRoutes)
 app.use('/classes/', classesRoutes)
 app.use('/subjects', subjectsRoutes)
 app.use('/sessions', sessionsRoutes)
-app.use('/parents', parentsRoutes)
+app.use('/parents/', parentsRoutes)
 //functions
 app.use('/functions/link_student_and_class', linkStudentAndClassRoutes)
 app.use('/functions/link_student_and_parent', linkStudentAndParentRoutes)
