@@ -7,10 +7,11 @@ const ClassModel = require('../../models/classes/class')
 const axios = require('axios')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const checkAuth = require("../../middleware/checkAuth")
 
 //Etablissements
 //GET SCHOOLS
-router.get('/', (req, res, next) => {
+router.get('/', checkAuth, (req, res, next) => {
     SchoolModel.find()
         .select('_id classes name type phoneNumber email password isPublic address country photoUrl since bio')
         .populate('classes', 'name')
@@ -155,7 +156,7 @@ router.post('/login', (req, res, next) => {
 
 //Etablissement/:id
 //GET SCHOOL
-router.get('/:schoolId', (req, res, next) => {
+router.get('/:schoolId', checkAuth, (req, res, next) => {
     const id = req.params.schoolId
     SchoolModel.findById(id)
         .select('_id classes name type phoneNumber email password isPublic address country photoUrl since bio')
@@ -196,7 +197,7 @@ router.get('/:schoolId', (req, res, next) => {
 })
 
 //PATCH SCHOOL
-router.patch('/:schoolId', (req, res, next) => {
+router.patch('/:schoolId', checkAuth, (req, res, next) => {
     const id = req.params.schoolId
     //a revoir
     SchoolModel.update({_id: id}, {$set: req.body})
@@ -206,7 +207,7 @@ router.patch('/:schoolId', (req, res, next) => {
                 message: 'You just updated this school\'s information!',
                 request: {
                     type: 'GET',
-                    url: 'http://localhost:8000/schools' + id
+                    url: 'http://localhost:8000/schools/' + id
                 }
             })
         })
@@ -219,7 +220,7 @@ router.patch('/:schoolId', (req, res, next) => {
 })
 
 //DELETE SCHOOL
-router.delete('/:schoolId', (req, res, next) => {
+router.delete('/:schoolId', checkAuth, (req, res, next) => {
     const id = req.params.schoolId
     SchoolModel.findById(id)
     .exec()
